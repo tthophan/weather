@@ -1,0 +1,12 @@
+**/*.lock
+**/*.sh
+**/*.prisma
+**/*.sql
+**/*.toml
+
+.gitignore
+.prettierignore
+.husky
+.env.example
+.gitattributes
+Dockerfile

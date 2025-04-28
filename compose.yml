@@ -1,0 +1,73 @@
+services:
+  service:
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    environment:
+      - TZ=UTC
+      - NODE_ENV=development
+      - PORT=80
+      - LOG_LEVEL="info"
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_USER=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DB=postgres
+      - POSTGRESQL_PORT=5432
+      - REDIS_MODE=client
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPEN_WEATHER_API_KEY=7f5b2e8f1fc37005f85a1db8e33b26e8
+    ports:
+      - 8020:80
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+  migration:
+    build:
+      context: ./backend
+      dockerfile: ./migrate/Dockerfile
+    environment:
+      - TZ=UTC
+      - NODE_ENV=development
+      - PORT=3000
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_USER=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DB=postgres
+      - POSTGRESQL_PORT=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 54321:5432
+    volumes:
+      - data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:latest
+    ports:
+      - 63791:6379
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+volumes:
+  data:
+  redis:

@@ -1,0 +1,5 @@
+{
+  "BAD_REQUEST": "Yêu cầu không hợp lệ",
+  "INTERNAL_SERVER_ERROR": "Lỗi máy chủ nội bộ",
+  "ERROR_0001": "Không tìm thấy tài khoản {user} trong hệ thống"
+}

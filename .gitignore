@@ -41,8 +41,37 @@
 # Environment 
 *.env*
 !.env.example
+
 # configuration
 **/*.config.json
 
 # Prisma seeds files
 /backend/prisma/seeds/**
+
+# dependencies
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+*.pem
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel
+/frontend/.next
+/frontend/out

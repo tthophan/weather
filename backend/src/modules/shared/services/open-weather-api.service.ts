@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { Configuration } from 'src/config/configuration.interface';
 import { ExternalHttpClientService } from 'src/modules/http';
 import { OpenWeatherApiResponse } from '../models';
-import { Configuration } from 'src/config/configuration.interface';
-import { instanceToPlain, plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class OpenWeatherApiService {
   private readonly apiKey: string;
+  private endpoint: string = `https://api.openweathermap.org`;
 
   constructor(
     private readonly externalHttpService: ExternalHttpClientService,
@@ -22,13 +23,8 @@ export class OpenWeatherApiService {
     latitude: number,
     longitude: number,
   ): Promise<OpenWeatherApiResponse> {
-
-    console.log({
-      latitude,
-    })
-    /*
     const response = await this.externalHttpService.get<any>(
-      `https://api.openweathermap.org/data/2.5/weather`,
+      `${this.endpoint}/data/2.5/weather`,
       {
         lat: latitude,
         lon: longitude,
@@ -36,56 +32,6 @@ export class OpenWeatherApiService {
         appid: this.apiKey,
       },
     );
-    */
-    const response = {
-      coord: {
-        lon: 103.8195,
-        lat: 1.3571,
-      },
-      weather: [
-        {
-          id: 803,
-          main: 'Clouds',
-          description: 'broken clouds',
-          icon: '04n',
-        },
-      ],
-      base: 'stations',
-      main: {
-        temp: 26.36,
-        feels_like: 26.36,
-        temp_min: 25.78,
-        temp_max: 26.76,
-        pressure: 1010,
-        humidity: 88,
-        sea_level: 1010,
-        grnd_level: 1009,
-      },
-      visibility: 9000,
-      wind: {
-        speed: 1.03,
-        deg: 360,
-      },
-      clouds: {
-        all: 75,
-      },
-      dt: 1745510799,
-      sys: {
-        type: 1,
-        id: 9479,
-        country: 'SG',
-        sunrise: 1745535472,
-        sunset: 1745579234,
-      },
-      timezone: 28800,
-      id: 1880755,
-      name: 'Bright Hill Crescent',
-      cod: 200,
-    };
-
-    console.log({
-      response,
-    })
 
     return plainToInstance(OpenWeatherApiResponse, response, {
       excludeExtraneousValues: true,

@@ -2,23 +2,23 @@
 
 # Comments are provided throughout this file to help you get started.
 # If you need more help, visit the Dockerfile reference guide at
-# https://docs.docker.com/engine/reference/builder/
+# https://docs.docker.com/go/dockerfile-reference/
 
-ARG NODE_VERSION=20.11.1
+# Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
+
+ARG NODE_VERSION=20.15.0
 
 ################################################################################
 # Use node image for base image for all stages.
-FROM --platform=linux/amd64 node:${NODE_VERSION}-alpine as base
+FROM node:${NODE_VERSION}-alpine as base
 
 # Set working directory for all build stages.
 WORKDIR /usr/src/app
-ENV HUSKY=0
 
 
 ################################################################################
 # Create a stage for installing production dependecies.
 FROM base as deps
-COPY prisma ./prisma
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.yarn to speed up subsequent builds.
@@ -27,11 +27,8 @@ COPY prisma ./prisma
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=yarn.lock,target=yarn.lock \
     --mount=type=cache,target=/root/.yarn \
-    yarn install --production --frozen-lockfile --ignore-scripts
+    yarn install --production --frozen-lockfile
 
-# Generate prisma schema
-RUN npx prisma generate
-    
 ################################################################################
 # Create a stage for building the application.
 FROM deps as build
@@ -41,7 +38,10 @@ FROM deps as build
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=yarn.lock,target=yarn.lock \
     --mount=type=cache,target=/root/.yarn \
-    yarn install --frozen-lockfile --ignore-scripts
+    yarn install --frozen-lockfile
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Copy the rest of the source files into the image.
 COPY . .
@@ -55,23 +55,25 @@ FROM base as final
 
 # Use production node environment by default.
 ENV NODE_ENV production
-ENV PORT=$PORT
+ENV HOSTNAME "0.0.0.0"
 
-# Install curl to healthcheck
-RUN apk add curl
 # Run the application as a non-root user.
 USER node
 
 # Copy package.json so that package manager commands can be used.
-COPY --chown=node:node package.json .
+COPY package.json .
 
 # Copy the production dependencies from the deps stage and also
 # the built application from the build stage into the image.
-COPY --chown=node:node --from=deps /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node --from=build /usr/src/app/dist ./dist
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/next ./next
+
+COPY --from=deps /usr/src/app/public ./public
+COPY --from=builder /usr/src/app/.next/standalone ./
+COPY --from=builder /usr/src/app/.next/static ./.next/static
 
 # Expose the port that the application listens on.
-EXPOSE $PORT
+EXPOSE 3000
 
 # Run the application.
-CMD ["node","dist/main.js", ">", "/dev/stdout"]
+CMD yarn start

@@ -26,6 +26,11 @@ services:
         condition: service_healthy
       migration:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "localhost:80/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   migration:
     build:
       context: ./backend
@@ -42,7 +47,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
   postgres:
     image: postgres:latest
     environment:
@@ -53,7 +57,7 @@ services:
     volumes:
       - data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: ["CMD", "pg_isready"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,6 +72,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+  app:
+    build:
+      context: ./frontend
+      dockerfile: ./Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://service:80
+    # environment:
+    #   - NEXT_PUBLIC_API_URL=http://locahost:8020
+    ports:
+      - 3000:3000
+    depends_on:
+      service:
+        condition: service_healthy
 volumes:
   data:
   redis:
